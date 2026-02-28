@@ -51,6 +51,18 @@ class AnnualReport(models.Model):
         if self.net_profit and self.revenue:
             if self.net_profit > self.revenue:
                 raise ValidationError('Net profit cant bigger than Revenue')
+        if self.total_assets and self.total_liabilities and self.equity:
+            if self.total_liabilities + self.equity != self.total_assets:
+                raise ValidationError('Assets must equal to liabilities + equity')
+            
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
 
     def __str__(self):
         return f"{self.company.ticker} - Annual {self.year}"
@@ -104,5 +116,18 @@ class QuarterReport(models.Model):
         if self.net_profit and self.revenue:
             if self.net_profit > self.revenue:
                 raise ValidationError('Net profit cant bigger than Revenue')
+        if self.total_assets and self.total_liabilities and self.equity:
+            if self.total_liabilities + self.equity != self.total_assets:
+                raise ValidationError('Assets must equal to liabilities + equity')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
     def __str__(self):
         return f"{self.company.ticker} - Q{self.quarter} {self.year}"

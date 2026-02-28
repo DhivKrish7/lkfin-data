@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Company Dashboard</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+
+    <style>
+        body {
+            background-color: #0f1115;
+            color: #e5e7eb;
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+
+        .header {
+            margin-bottom: 30px;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .kpi-card {
+            background-color: #1a1d23;
+            padding: 20px;
+            border-radius: 6px;
+        }
+
+        .kpi-title {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        .kpi-value {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        #revenueChart {
+            height: 400px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+    <h1 id="companyName">Loading...</h1>
+    <p id="companyMeta"></p>
+</div>
+
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-title">Revenue</div>
+        <div class="kpi-value" id="kpiRevenue">-</div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-title">Net Profit</div>
+        <div class="kpi-value" id="kpiProfit">-</div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-title">Current Ratio</div>
+        <div class="kpi-value" id="kpiCurrentRatio">-</div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-title">Debt / Equity</div>
+        <div class="kpi-value" id="kpiDebtEquity">-</div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-title">Profit Margin</div>
+        <div class="kpi-value" id="kpiMargin">-</div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-title">Revenue Growth</div>
+        <div class="kpi-value" id="kpiGrowth">-</div>
+    </div>
+</div>
+
+<div id="revenueChart"></div>
+
+<script>
+    const ticker = "{{ ticker }}";
+
+    fetch(`/api/company/${ticker}/`)
+        .then(response => response.json())
+        .then(data => {
+
+            // Header
+            document.getElementById("companyName").innerText = data.name;
+            document.getElementById("companyMeta").innerText =
+                `${data.ticker} | ${data.sector || ''} | ${data.industry || ''}`;
+
+            // Get annual reports
+            const reports = data.annual_reports;
+
+            if (!reports || reports.length === 0) return;
+
+            const latest = reports[0];
+            const previous = reports[1];
+
+            // KPIs
+            document.getElementById("kpiRevenue").innerText = formatNumber(latest.revenue);
+            document.getElementById("kpiProfit").innerText = formatNumber(latest.net_profit);
+
+            let currentRatio = latest.current_assets / latest.current_liabilities;
+            let debtEquity = latest.total_liabilities / latest.equity;
+
+            document.getElementById("kpiCurrentRatio").innerText = currentRatio.toFixed(2);
+            document.getElementById("kpiDebtEquity").innerText = debtEquity.toFixed(2);
+
+            // Chart Data
+            const years = reports.map(r => r.year).reverse();
+            const revenues = reports.map(r => r.revenue).reverse();
+            const profits = reports.map(r => r.net_profit).reverse();
+
+            renderChart(years, revenues, profits);
+
+        });
+
+    function renderChart(years, revenues, profits) {
+
+        var chartDom = document.getElementById('revenueChart');
+        var myChart = echarts.init(chartDom);
+
+        var option = {
+            backgroundColor: '#0f1115',
+            tooltip: { trigger: 'axis' },
+            legend: {
+                data: ['Revenue', 'Net Profit'],
+                textStyle: { color: '#e5e7eb' }
+            },
+            xAxis: {
+                type: 'category',
+                data: years,
+                axisLabel: { color: '#e5e7eb' }
+            },
+            yAxis: {
+                type: 'value',
+                axisLabel: { color: '#e5e7eb' }
+            },
+            series: [
+                {
+                    name: 'Revenue',
+                    type: 'line',
+                    data: revenues,
+                    smooth: true
+                },
+                {
+                    name: 'Net Profit',
+                    type: 'line',
+                    data: profits,
+                    smooth: true
+                }
+            ]
+        };
+
+        myChart.setOption(option);
+    }
+
+    function formatNumber(num) {
+        if (!num) return "-";
+        return new Intl.NumberFormat().format(num);
+    }
+</script>
+
+</body>
+</html>
